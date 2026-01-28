@@ -13,9 +13,13 @@ public class Main {
         System.out.println(newRizLegume); // Should not throw exception
 
 
-        Dish rizLegumeAgain = dataRetriever.findDishById(3);
-        rizLegumeAgain.setPrice(null);
-        Dish savedNewRizLegume = dataRetriever.saveDish(rizLegume);
-        System.out.println(savedNewRizLegume); // Should throw exception
+//        Dish rizLegumeAgain = dataRetriever.findDishById(3);
+//        rizLegumeAgain.setPrice(null);
+//        Dish savedNewRizLegume = dataRetriever.saveDish(rizLegume);
+//        System.out.println(savedNewRizLegume); // Should throw exception
+
+        Ingredient laitue = dataRetriever.findIngredientById(1);
+        System.out.println(laitue);
+
     }
 }

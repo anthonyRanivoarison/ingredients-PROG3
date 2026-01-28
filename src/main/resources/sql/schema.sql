@@ -15,8 +15,7 @@ create table ingredient
     id       serial primary key,
     name     varchar(255),
     price    numeric(10, 2),
-    category ingredient_category,
-    id_dish  int references dish (id)
+    category ingredient_category
 );
 
 alter table dish
@@ -46,3 +45,21 @@ create table if not exists dish_ingredient
     foreign key (id_ingredient) references ingredient (id),
     foreign key (id_dish) references dish (id)
 );
+
+create type movement_type as enum ('IN', 'OUT');
+
+create table if not exists stock_movement
+(
+    id                serial primary key,
+    id_ingredient     int,
+    quantity          numeric(10, 2),
+    unit              unit,
+    type              movement_type,
+    creation_datetime timestamp without time zone,
+    foreign key (id_ingredient) references ingredient (id)
+);
+
+
+alter table ingredient
+    add column if not exists initial_stock numeric(10, 2);
+
