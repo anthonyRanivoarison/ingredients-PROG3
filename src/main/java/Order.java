@@ -44,8 +44,8 @@ public class Order {
     public String toString() {
         return "Order{" +
                 "id=" + id +
-                "totalAmountWithoutVat=" + getTotalAmountWithoutVat() +
-                "totalAmountWithVat=" + getTotalAmountWithVat() +
+                ", totalAmountWithoutVat=" + getTotalAmountWithoutVat() +
+                ", totalAmountWithVat=" + getTotalAmountWithVat() +
                 ", reference='" + reference + '\'' +
                 ", creationDatetime=" + creationDatetime +
                 ", dishOrderList=" + dishOrderList +

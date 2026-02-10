@@ -1,3 +1,5 @@
+\c mini_dish_db;
+
 create type dish_type as enum ('STARTER', 'MAIN', 'DESSERT');
 
 

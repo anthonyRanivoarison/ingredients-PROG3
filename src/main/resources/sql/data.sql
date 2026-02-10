@@ -1,3 +1,5 @@
+\c mini_dish_db;
+
 insert into dish (id, name, dish_type, selling_price)
 values (1, 'Salaide fraîche', 'STARTER', 3500.0),
        (2, 'Poulet grillé', 'MAIN', 12000.0),
@@ -16,11 +18,11 @@ values (1, 'Laitue', 'VEGETABLE', 800.0),
 
 
 update dish
-set price = 2000.0
+set selling_price = 2000.0
 where id = 1;
 
 update dish
-set price = 6000.0
+set selling_price = 6000.0
 where id = 2;
 
 

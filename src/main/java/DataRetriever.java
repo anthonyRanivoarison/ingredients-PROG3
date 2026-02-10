@@ -42,7 +42,7 @@ public class DataRetriever {
 
         try (Connection conn = new DBConnection().getConnection()) {
             conn.setAutoCommit(false);
-            Integer orderId;
+            int orderId;
             try (PreparedStatement ps = conn.prepareStatement(upsertOrderSql)) {
                 int nextSerialValue = getNextSerialValue(conn, "\"order\"", "id");
                 if (order.getId() != null) {
@@ -66,15 +66,12 @@ public class DataRetriever {
 
             conn.commit();
             return findOrderByReference(order.getReference());
-        } catch (PSQLException e) {
+        } catch (SQLException e) {
             if(e.getMessage().contains("duplicate key value violates unique constraint \"order_reference_unique\"")) {
                 throw new RuntimeException("Order already exists with reference " + order.getReference());
             } else {
                 throw new RuntimeException(e);
             }
-        }
-        catch (SQLException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -498,7 +495,7 @@ public class DataRetriever {
 
     private void updateSequenceNextValue(Connection conn, String tableName, String columnName, String sequenceName) throws SQLException {
         String setValSql = String.format(
-                "SELECT setval('%s', (SELECT COALESCE(MAX(%s), 0) FROM %s))",
+                "SELECT setval('%s', GREATEST((SELECT COALESCE(MAX(%s), 1) FROM %s), 1))",
                 sequenceName, columnName, tableName
         );
 
