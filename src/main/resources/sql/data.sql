@@ -45,3 +45,10 @@ values (1, 1, 1, 0.2, 'KG'),
        (3, 2, 3, 1.0, 'KG'),
        (4, 4, 4, 0.3, 'KG'),
        (5, 4, 5, 0.2, 'KG');
+
+select d.selling_price - sum(ingredient.price * di.required_quantity) as dish_cost
+from dish_ingredient di
+         join ingredient on di.id_ingredient = ingredient.id
+         join dish d on di.id_dish = d.id
+where di.id_dish = 1
+group by d.selling_price;

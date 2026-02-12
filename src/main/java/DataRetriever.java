@@ -1,6 +1,5 @@
-import org.postgresql.util.PSQLException;
-
 import java.sql.*;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -165,6 +164,118 @@ public class DataRetriever {
         }
     }
 
+    // PUSH-DOWN PROCESSING
+    StockValue getStockValueAt(Instant t, Integer ingredientIdentifier) {
+        DBConnection dbConnection = new DBConnection();
+        String query = """
+                select stock_movement.unit, sum(
+                        case
+                            when stock_movement.type = 'IN' then stock_movement.quantity
+                            when stock_movement.type = 'OUT' then -stock_movement.quantity
+                            else 0
+                        END) as actual_quantity
+                from stock_movement
+                join ingredient on stock_movement.id_ingredient = ingredient.id
+                where ingredient.id = ? and creation_datetime <= ?
+                group by stock_movement.unit;
+                """;
+        try (Connection conn = dbConnection.getConnection()) {
+            StockValue stockValue = new StockValue();
+            PreparedStatement ps = conn.prepareStatement(query);
+            ps.setInt(1, ingredientIdentifier);
+            ps.setTimestamp(2, Timestamp.from(t));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    stockValue.setUnit(Unit.valueOf(rs.getString("unit")));
+                    stockValue.setQuantity(rs.getDouble("actual_quantity"));
+                }
+            }
+            return stockValue;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    Double getDishCost(Integer dishId) {
+        DBConnection dbConnection = new DBConnection();
+        String query = """
+                select sum(ingredient.price * di.required_quantity) as dish_cost
+                from dish_ingredient di
+                join ingredient on di.id_ingredient = ingredient.id
+                where di.id_dish = ?;
+                """;
+        try (Connection conn = dbConnection.getConnection()) {
+            PreparedStatement ps = conn.prepareStatement(query);
+            ps.setInt(1, dishId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getDouble("dish_cost");
+                }
+            }
+            return null;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    Double getCrossMargin(Integer dishId) {
+        DBConnection dbConnection = new DBConnection();
+        String query = """
+                select d.selling_price - sum(ingredient.price * di.required_quantity) as cross_margin
+                from dish_ingredient di
+                         join ingredient on di.id_ingredient = ingredient.id
+                         join dish d on di.id_dish = d.id
+                where di.id_dish = ?
+                group by d.selling_price;
+                """;
+        try (Connection conn = dbConnection.getConnection()) {
+            PreparedStatement ps = conn.prepareStatement(query);
+            ps.setInt(1, dishId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getDouble("cross_margin");
+                }
+            }
+            return null;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public boolean getStockStats(String period, String intervalleMin, String intervalleMax) {
+            DBConnection dbConnection = new DBConnection();
+            String query = """
+                    select ingredient.name, sum(
+                            case
+                                when stock_movement.type = 'IN' then stock_movement.quantity
+                                when stock_movement.type = 'OUT' then -stock_movement.quantity
+                                else 0
+                            END) as quantity,
+                        date_trunc(?, stock_movement.creation_datetime) as period
+                    from stock_movement
+                    join ingredient on stock_movement.id_ingredient = ingredient.id
+                    where creation_datetime >= ? and creation_datetime <= ?
+                    group by ingredient.name, period
+                    order by period;
+                    """;
+            try (Connection conn = dbConnection.getConnection()) {
+                PreparedStatement ps = conn.prepareStatement(query);
+                ps.setString(1, period);
+                ps.setTimestamp(2, Timestamp.valueOf(intervalleMin));
+                ps.setTimestamp(3, Timestamp.valueOf(intervalleMax));
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        String name = rs.getString("name");
+                        Double quantity = rs.getDouble("quantity");
+                        Timestamp periodValue = rs.getTimestamp("period");
+                        System.out.println("Ingredient: " + name + ", Quantity: " + quantity + ", Period: " + periodValue);
+                    }
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        return false;
+    }
 
     Ingredient saveIngredient(Ingredient toSave) {
         String upsertIngredientSql = """
